@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Fullscreen</title>
+    <style>
+      body {
+        margin: 0;
+        background: black;
+        color: white;
+        font-size: 3em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content">Czekam na treść...</div>
+    <script>
+      console.log("[fullscreen.html] script loaded");
+      window.fullscreen.onContentUpdate((text) => {
+        document.getElementById("content").innerHTML = text.replace(
+          /\n/g,
+          "<br>"
+        );
+      });
+    </script>
+  </body>
+</html>

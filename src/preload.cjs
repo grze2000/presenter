@@ -10,4 +10,12 @@ contextBridge.exposeInMainWorld("api", {
   setFullscreenContent: (text) =>
     ipcRenderer.invoke("set-fullscreen-content", text),
   onFullscreenClosed: (cb) => ipcRenderer.on("fullscreen-closed", cb),
+  createSchedule: () => ipcRenderer.invoke("create-schedule"),
+  getSchedules: () => ipcRenderer.invoke("get-schedules"),
+  getScheduleSongs: (scheduleId) =>
+    ipcRenderer.invoke("get-schedule-songs", scheduleId),
+  removeSongFromSchedule: (scheduleSongId) =>
+    ipcRenderer.invoke("remove-song-from-schedule", scheduleSongId),
+  addSongToSchedule: (scheduleId, songId) =>
+    ipcRenderer.invoke("add-song-to-schedule", scheduleId, songId),
 });

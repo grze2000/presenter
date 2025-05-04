@@ -1,10 +1,10 @@
 import React from "react";
 
-export default function SongView({ song }) {
+export const SongView = ({ song }) => {
   if (!song) return <div style={{ padding: "1rem" }}>Wybierz pieśń...</div>;
 
   return (
-    <div style={{ padding: "1rem", flex: 1 }}>
+    <div className="text-white overflow-auto p-10">
       <h2>{song.title}</h2>
       {song.verses.map((v) => (
         <div key={v.number} style={{ marginBottom: "1em" }}>
@@ -18,4 +18,4 @@ export default function SongView({ song }) {
       ))}
     </div>
   );
-}
+};

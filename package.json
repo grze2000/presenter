@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "vite build && electron-builder",
-    "rebuild": "electron-rebuild"
+    "rebuild": "electron-rebuild",
+    "init:tailwind": "tailwindcss init -p"
   },
   "build": {
     "appId": "com.presenter.app",
@@ -33,11 +34,13 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",
-    "electron": "^36.1.0"
+    "electron": "^36.1.0",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.1",
     "@tailwindcss/postcss": "^4.1.5",
+    "@tailwindcss/vite": "^4.1.5",
     "@types/node": "^22.15.3",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",

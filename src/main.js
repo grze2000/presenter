@@ -3,6 +3,7 @@ import { app, BrowserWindow, ipcMain, screen } from "electron";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { initDatabase } from "./utils/initDatabase.js";
 
 const isDev = !app.isPackaged;
 const __filename = fileURLToPath(import.meta.url);
@@ -23,6 +24,7 @@ if (!fs.existsSync(userDbPath)) {
   fs.copyFileSync(sourceDbPath, userDbPath);
 }
 const db = new Database(userDbPath);
+initDatabase(db);
 
 let fsWin = null;
 let mainWin = null;
@@ -112,4 +114,80 @@ ipcMain.handle("set-fullscreen-content", (e, text) => {
 });
 ipcMain.handle("close-fullscreen", () => {
   if (fsWin && !fsWin.isDestroyed()) fsWin.close();
+});
+
+ipcMain.handle("create-schedule", (e) => {
+  const baseName = new Date().toLocaleDateString("pl-PL"); // "03.05.2025"
+  let name = baseName;
+  let counter = 1;
+
+  while (true) {
+    const exists = db
+      .prepare("SELECT 1 FROM schedules WHERE name = ?")
+      .get(name);
+    if (!exists) break;
+    name = `${baseName} #${counter++}`;
+  }
+
+  const stmt = db.prepare("INSERT INTO schedules (name) VALUES (?)");
+  const info = stmt.run(name);
+  return { id: info.lastInsertRowid, name };
+});
+
+ipcMain.handle("get-schedules", () => {
+  return db
+    .prepare(
+      "SELECT id, name, created_at FROM schedules ORDER BY created_at DESC"
+    )
+    .all();
+});
+
+ipcMain.handle("get-schedule-songs", (e, scheduleId) => {
+  const rows = db
+    .prepare(
+      `
+    SELECT
+      ss.id,           -- id wpisu (schedule_songs)
+      ss.song_id,
+      s.title,
+      ss.position
+    FROM schedule_songs ss
+    JOIN songs s ON s.id = ss.song_id
+    WHERE ss.schedule_id = ?
+    ORDER BY ss.position ASC
+  `
+    )
+    .all(scheduleId);
+
+  return rows;
+});
+
+ipcMain.handle("add-song-to-schedule", (e, scheduleId, songId) => {
+  // znajdź najwyższą istniejącą pozycję
+  console.log("Adding song to schedule", scheduleId, songId);
+
+  const result = db
+    .prepare(
+      `
+    SELECT MAX(position) as maxPos
+    FROM schedule_songs
+    WHERE schedule_id = ?
+  `
+    )
+    .get(scheduleId);
+
+  const position = (result?.maxPos ?? 0) + 1;
+
+  const stmt = db.prepare(`
+    INSERT INTO schedule_songs (schedule_id, song_id, position)
+    VALUES (?, ?, ?)
+  `);
+
+  const info = stmt.run(scheduleId, songId, position);
+
+  return { id: info.lastInsertRowid, position };
+});
+
+ipcMain.handle("remove-song-from-schedule", (e, scheduleSongId) => {
+  db.prepare("DELETE FROM schedule_songs WHERE id = ?").run(scheduleSongId);
 });

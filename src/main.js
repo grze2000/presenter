@@ -191,3 +191,22 @@ ipcMain.handle("add-song-to-schedule", (e, scheduleId, songId) => {
 ipcMain.handle("remove-song-from-schedule", (e, scheduleSongId) => {
   db.prepare("DELETE FROM schedule_songs WHERE id = ?").run(scheduleSongId);
 });
+
+ipcMain.handle("swap-schedule-positions", (e, idA, idB) => {
+  const getPos = db.prepare(
+    "SELECT id, position FROM schedule_songs WHERE id = ?"
+  );
+  const rowA = getPos.get(idA);
+  const rowB = getPos.get(idB);
+
+  const update = db.prepare(
+    "UPDATE schedule_songs SET position = ? WHERE id = ?"
+  );
+
+  const tx = db.transaction(() => {
+    update.run(rowB.position, rowA.id);
+    update.run(rowA.position, rowB.id);
+  });
+
+  tx();
+});

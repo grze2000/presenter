@@ -18,4 +18,6 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("remove-song-from-schedule", scheduleSongId),
   addSongToSchedule: (scheduleId, songId) =>
     ipcRenderer.invoke("add-song-to-schedule", scheduleId, songId),
+  swapSchedulePositions: (idA, idB) =>
+    ipcRenderer.invoke("swap-schedule-positions", idA, idB),
 });

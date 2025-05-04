@@ -19,6 +19,19 @@ export const Schedule = ({
     window.api.getScheduleSongs(selectedSchedule.id).then(setSongs);
   }, [selectedSchedule]);
 
+  const swapSongs = async (indexA, indexB) => {
+    const songA = scheduleSongs[indexA];
+    const songB = scheduleSongs[indexB];
+    if (!songA || !songB) return;
+
+    await window.api.swapSchedulePositions(songA.id, songB.id);
+
+    // lokalnie też zamień miejscami (dla natychmiastowego efektu)
+    const updated = [...scheduleSongs];
+    [updated[indexA], updated[indexB]] = [updated[indexB], updated[indexA]];
+    setScheduleSongs(updated);
+  };
+
   if (!selectedSchedule) {
     return (
       <div className="flex flex-col justify-center items-center flex-1 gap-2">
@@ -62,6 +75,7 @@ export const Schedule = ({
             <div className="flex items-center gap-1">
               <button
                 disabled={index === 0}
+                onClick={() => swapSongs(index, index - 1)}
                 className={`transition-colors h-6 w-6 flex justify-center items-center rounded ${
                   index === 0
                     ? "text-gray-300"
@@ -72,6 +86,7 @@ export const Schedule = ({
               </button>
               <button
                 disabled={index === scheduleSongs.length - 1}
+                onClick={() => swapSongs(index, index + 1)}
                 className={`transition-colors h-6 w-6 flex justify-center items-center rounded ${
                   index === scheduleSongs.length - 1
                     ? "text-gray-300"

@@ -1,11 +1,14 @@
 {
+  "name": "Presenter",
+  "version": "1.0.0",
   "main": "src/main.js",
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build": "vite build && electron-builder",
     "rebuild": "electron-rebuild",
-    "init:tailwind": "tailwindcss init -p"
+    "init:tailwind": "tailwindcss init -p",
+    "postinstall": "electron-builder install-app-deps"
   },
   "build": {
     "appId": "com.presenter.app",
@@ -14,12 +17,12 @@
       "output": "release"
     },
     "files": [
-      "dist/renderer/**/*",
-      "src/main.js",
-      "src/preload.js",
-      "src/fullscreen-preload.js",
-      "src/data/database.db",
-      "assets/fullscreen.html"
+      "dist/**/*",
+      "src/**/*",
+      "assets/fullscreen.html",
+      "data/**/*",
+      "preload.cjs",
+      "fullscreen-preload.cjs"
     ],
     "asar": true,
     "win": {
@@ -34,10 +37,10 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.9.1",
-    "electron": "^36.1.0",
     "react-icons": "^5.5.0"
   },
   "devDependencies": {
+    "electron": "^36.1.0",
     "@electron/rebuild": "^4.0.1",
     "@tailwindcss/postcss": "^4.1.5",
     "@tailwindcss/vite": "^4.1.5",

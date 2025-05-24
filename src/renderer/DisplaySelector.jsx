@@ -22,6 +22,11 @@ export default function DisplaySelector() {
   const [verse, setVerse] = useState(0);
   const [windowOpened, setWindowOpened] = useState(false);
   const [currentDisplayId, setCurrentDisplayId] = useState(null);
+  const [selectedTab, setSelectedTab] = useState("categories");
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [scheduleSongs, setScheduleSongs] = useState([]);
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const [currentVerseIndex, setCurrentVerseIndex] = useState(0);
 
   useEffect(() => {
     window.api.getDisplays().then(async (list) => {
@@ -51,37 +56,68 @@ export default function DisplaySelector() {
     );
   };
 
-  const handlePresent = () => {
-    if (selectedId && song) {
-      setWindowOpened(true);
-      window.api.openFullscreen(selectedId);
-      window.api.setFullscreenContent(song?.verses?.[verse]?.text);
+  const handlePresent = async () => {
+    if (!selectedSchedule || !scheduleSongs.length || !selectedId) return;
+
+    setWindowOpened(true);
+    await window.api.openFullscreen(selectedId);
+    setCurrentSongIndex(0);
+    setCurrentVerseIndex(0);
+
+    const song = await window.api.getSong(scheduleSongs[0].song_id);
+    window.api.setFullscreenContent(song.verses[0].text);
+  };
+
+  const sendCurrent = async (
+    songIndex = currentSongIndex,
+    verseIndex = currentVerseIndex
+  ) => {
+    const songMeta = scheduleSongs[songIndex];
+    if (!songMeta) return;
+    const songData = await window.api.getSong(songMeta.song_id);
+    const verse = songData.verses?.[verseIndex];
+    if (verse) {
+      window.api.setFullscreenContent(verse.text);
     }
   };
 
   useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (!windowOpened) return;
-      if (!song) return;
+    const handleKeyDown = async (event) => {
+      if (!windowOpened || !scheduleSongs.length) return;
 
-      // Przejdź do następnej zwrotki, jeśli jest dostępna
-      if (event.code === "Space") {
-        event.preventDefault(); // zapobiega scrollowaniu
-        if (verse < song.verses.length - 1) {
-          sendContent(verse + 1);
+      if (event.code === "Space" || event.code === "ArrowRight") {
+        event.preventDefault();
+
+        const current = await window.api.getSong(
+          scheduleSongs[currentSongIndex].song_id
+        );
+        if (currentVerseIndex < current.verses.length - 1) {
+          setCurrentVerseIndex((prev) => {
+            const next = prev + 1;
+            sendCurrent(currentSongIndex, next);
+            return next;
+          });
+        } else if (currentSongIndex < scheduleSongs.length - 1) {
+          const nextSong = currentSongIndex + 1;
+          setCurrentSongIndex(nextSong);
+          setCurrentVerseIndex(0);
+          sendCurrent(nextSong, 0);
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [windowOpened, song, verse]);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [windowOpened, currentSongIndex, currentVerseIndex, scheduleSongs]);
 
-  const [selectedTab, setSelectedTab] = useState("categories");
-  const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [scheduleSongs, setScheduleSongs] = useState([]);
+  const handleNextSong = async () => {
+    if (currentSongIndex < scheduleSongs.length - 1) {
+      const next = currentSongIndex + 1;
+      setCurrentSongIndex(next);
+      setCurrentVerseIndex(0);
+      sendCurrent(next, 0);
+    }
+  };
 
   useEffect(() => {
     if (!selectedSchedule) return;
@@ -119,12 +155,14 @@ export default function DisplaySelector() {
             >
               Harmonogramy
             </button>
+            <button onClick={() => setSelectedTab("text")}>Notatki</button>
           </div>
           {selectedTab === "categories" ? (
             <CategoryList setCategory={setCategory} />
           ) : selectedTab === "schedules" ? (
             <ScheduleList setSelectedSchedule={setSelectedSchedule} />
           ) : null}
+          {selectedTab === "text" && <TextTab />}
         </div>
         <div className="flex-1 border-r border-gray-300 overflow-auto">
           <SongList
@@ -143,6 +181,7 @@ export default function DisplaySelector() {
               selectedSchedule={selectedSchedule}
               scheduleSongs={scheduleSongs}
               setScheduleSongs={setScheduleSongs}
+              currentSongId={scheduleSongs[currentSongIndex]?.song_id}
             />
           </div>
         </div>
@@ -162,7 +201,12 @@ export default function DisplaySelector() {
         ) : (
           <button
             onClick={handlePresent}
-            disabled={!song || windowOpened}
+            disabled={
+              !selectedSchedule ||
+              !scheduleSongs.length ||
+              !selectedId ||
+              windowOpened
+            }
             className="mr-auto rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-green-400 hover:bg-green-300 transition-colors cursor-pointer"
           >
             <LuPresentation size={30} />
@@ -194,6 +238,7 @@ export default function DisplaySelector() {
           <FaAngleRight size={40} />
         </button>
         <button
+          onClick={handleNextSong}
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
           disabled={!selectedSongId || verse === song?.verses?.length - 1}
           title="Następna pieśń"

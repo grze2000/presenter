@@ -6,6 +6,7 @@ export const Schedule = ({
   selectedSchedule,
   scheduleSongs,
   setScheduleSongs,
+  currentSongId,
 }) => {
   const [songs, setSongs] = useState([]);
 
@@ -67,7 +68,11 @@ export const Schedule = ({
     <ul className="w-full">
       {scheduleSongs.map((s, index) => (
         <li key={s.id}>
-          <button className="border-b border-gray-300 w-full cursor-pointer hover:bg-gray-100 transition-colors text-left flex items-center pr-2">
+          <button
+            className={`border-b border-gray-300 w-full cursor-pointer hover:bg-gray-100 transition-colors text-left flex items-center pr-2 ${
+              s.song_id === currentSongId ? "bg-green-100" : ""
+            }`}
+          >
             <span className="border-r border-gray-300 py-1 px-3">
               {index + 1}.
             </span>

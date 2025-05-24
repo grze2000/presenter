@@ -3,10 +3,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
   root: "./src/renderer",
+  plugins: [react(), tailwindcss()],
+  publicDir: false,
+  base: "./",
   build: {
-    outDir: "../../dist/renderer",
+    outDir: "../../dist",
     emptyOutDir: true,
   },
 });

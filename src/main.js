@@ -15,7 +15,7 @@ const userDataPath = app.getPath("userData");
 const userDbPath = path.join(userDataPath, "database.db");
 const sourceDbPath = isDev
   ? path.join(__dirname, "data", "database.db")
-  : path.join(process.resourcesPath, "src", "data", "database.db");
+  : path.join(process.resourcesPath, "data", "database.db");
 
 if (!fs.existsSync(path.dirname(userDbPath))) {
   fs.mkdirSync(path.dirname(userDbPath), { recursive: true });
@@ -46,7 +46,7 @@ const createWindow = () => {
   if (isDev) {
     mainWin.loadURL("http://localhost:5173");
   } else {
-    mainWin.loadFile(path.join(__dirname, "../dist/renderer/index.html"));
+    mainWin.loadFile(path.join(__dirname, "..", "dist", "index.html"));
   }
 };
 

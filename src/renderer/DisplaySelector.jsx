@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaAngleDoubleLeft,
   FaAngleDoubleRight,
@@ -207,7 +207,7 @@ export default function DisplaySelector() {
               !selectedId ||
               windowOpened
             }
-            className="mr-auto rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-green-400 hover:bg-green-300 transition-colors cursor-pointer"
+            className="mr-auto rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-green-400 transition-colors cursor-pointer"
           >
             <LuPresentation size={30} />
             Prezentuj

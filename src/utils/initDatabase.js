@@ -1,4 +1,4 @@
-export const initDatabase = (db) => {
+function initDatabase(db) {
   // Kategorie
   db.prepare(
     `
@@ -58,4 +58,7 @@ export const initDatabase = (db) => {
       )
     `
   ).run();
-};
+}
+
+// Eksportuj w stylu CommonJS:
+module.exports = { initDatabase };

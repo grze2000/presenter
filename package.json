@@ -2,7 +2,6 @@
   "name": "Presenter",
   "version": "1.0.0",
   "main": "src/main.js",
-  "type": "module",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"electron .\"",
     "build": "vite build && electron-builder",
@@ -26,6 +25,9 @@
       "fullscreen-preload.cjs"
     ],
     "asar": true,
+    "asarUnpack": [
+      "data/**"
+    ],
     "win": {
       "target": "nsis"
     },
@@ -47,7 +49,7 @@
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.1.2",
-    "electron": "^36.1.0",
+    "electron": "^22.3.27",
     "electron-builder": "^26.0.12",
     "postcss": "^8.5.3",
     "react": "^18.3.1",

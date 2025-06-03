@@ -14,7 +14,7 @@ specifiers:
   autoprefixer: ^10.4.21
   better-sqlite3: ^11.9.1
   concurrently: ^9.1.2
-  electron: ^36.1.0
+  electron: ^22.3.27
   electron-builder: ^26.0.12
   postcss: ^8.5.3
   react: ^18.3.1
@@ -35,7 +35,7 @@ devDependencies:
   '@vitejs/plugin-react': 4.5.0_vite@4.5.14
   autoprefixer: 10.4.21_postcss@8.5.3
   concurrently: 9.1.2
-  electron: 36.3.2
+  electron: 22.3.27
   electron-builder: 26.0.12
   postcss: 8.5.3
   react: 18.3.1
@@ -911,6 +911,10 @@ packages:
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
     dev: true
 
+  /@types/node/16.18.126:
+    resolution: {integrity: sha512-OTcgaiwfGFBKacvfwuHzzn1KLxH/er8mluiy8/uM3sGXHaRe73RrSIj01jow9t4kJEW633Ov+cOexXeiApTyAw==}
+    dev: true
+
   /@types/node/22.15.21:
     resolution: {integrity: sha512-EV/37Td6c+MgKAbkcLG6vqZ2zEYHD7bvSrzqqs2RIhbA6w3x+Dqz8MZM3sP6kGTeLrdoOgKZe+Xja7tUB2DNkQ==}
     dependencies:
@@ -1669,14 +1673,14 @@ packages:
     resolution: {integrity: sha512-/0ybgsQd1muo8QlnuTpKwtl0oX5YMlUGbm8xyqgDU00motRkKFFbUJySAQBWcY79rVqNLWIWa87BGVGClwAB2w==}
     dev: true
 
-  /electron/36.3.2:
-    resolution: {integrity: sha512-v0/j7n22CL3OYv9BIhq6JJz2+e1HmY9H4bjTk8/WzVT9JwVX/T/21YNdR7xuQ6XDSEo9gP5JnqmjOamE+CUY8Q==}
+  /electron/22.3.27:
+    resolution: {integrity: sha512-7Rht21vHqj4ZFRnKuZdFqZFsvMBCmDqmjetiMqPtF+TmTBiGne1mnstVXOA/SRGhN2Qy5gY5bznJKpiqogjM8A==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
     requiresBuild: true
     dependencies:
       '@electron/get': 2.0.3
-      '@types/node': 22.15.21
+      '@types/node': 16.18.126
       extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color

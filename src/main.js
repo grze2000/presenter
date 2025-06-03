@@ -1,21 +1,23 @@
-import Database from "better-sqlite3";
-import { app, BrowserWindow, ipcMain, screen } from "electron";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { initDatabase } from "./utils/initDatabase.js";
+const Database = require("better-sqlite3");
+const { app, BrowserWindow, ipcMain, screen } = require("electron");
+const fs = require("fs");
+const path = require("path");
+const { initDatabase } = require("./utils/initDatabase.js");
 
 const isDev = !app.isPackaged;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 console.log("isDev", isDev);
 
 const userDataPath = app.getPath("userData");
 const userDbPath = path.join(userDataPath, "database.db");
 const sourceDbPath = isDev
-  ? path.join(__dirname, "data", "database.db")
-  : path.join(process.resourcesPath, "data", "database.db");
+  ? path.join(__dirname, "..", "data", "database.db")
+  : path.join(
+      process.resourcesPath,
+      "app.asar.unpacked",
+      "data",
+      "database.db"
+    );
 
 if (!fs.existsSync(path.dirname(userDbPath))) {
   fs.mkdirSync(path.dirname(userDbPath), { recursive: true });

@@ -6,6 +6,7 @@ export const SongList = ({
   setSelectedSongId,
   selectedSchedule,
   onSongAdded,
+  onPreview,
 }) => {
   const [songs, setSongs] = useState([]);
 
@@ -21,7 +22,10 @@ export const SongList = ({
         <li key={s.id}>
           <button
             className="border-b border-gray-300 w-full py-1 px-3 cursor-pointer hover:bg-gray-100 transition-colors text-left flex"
-            onClick={() => setSelectedSongId(s.id)}
+            onClick={() => {
+              setSelectedSongId(s.id);
+              if (onPreview) onPreview(s.id);
+            }}
           >
             <span className="flex-1">{s.title}</span>
             <button

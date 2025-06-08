@@ -4,21 +4,21 @@
     <meta charset="UTF-8" />
     <title>Fullscreen</title>
     <style>
-                              html,
-                              body {
-                                margin: 0;
-                                padding: 0;
-                                height: 100%;
-                                width: 100%;
-                                background: black;
-                                color: white;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                text-align: center;
-                                overflow: hidden;
-                              }
-                              #content {
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        background: black;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+      }
+      #content {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -45,6 +45,10 @@
           /\n/g,
           "<br>"
         );
+      });
+
+      document.addEventListener("keydown", (e) => {
+        window.fullscreen.sendKeyDown(e.code);
       });
     </script>
   </body>

@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld("api", {
   setFullscreenContent: (text) =>
     ipcRenderer.invoke("set-fullscreen-content", text),
   onFullscreenClosed: (cb) => ipcRenderer.on("fullscreen-closed", cb),
+  onFullscreenKeyDown: (cb) => {
+    const listener = (_event, code) => cb(code);
+    ipcRenderer.on("fullscreen-keydown", listener);
+    return () => ipcRenderer.removeListener("fullscreen-keydown", listener);
+  },
   createSchedule: () => ipcRenderer.invoke("create-schedule"),
   getSchedules: () => ipcRenderer.invoke("get-schedules"),
   getScheduleSongs: (scheduleId) =>

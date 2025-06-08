@@ -118,6 +118,12 @@ ipcMain.handle("close-fullscreen", () => {
   if (fsWin && !fsWin.isDestroyed()) fsWin.close();
 });
 
+ipcMain.on("fullscreen-keydown", (e, code) => {
+  if (mainWin) {
+    mainWin.webContents.send("fullscreen-keydown", code);
+  }
+});
+
 ipcMain.handle("create-schedule", (e) => {
   const baseName = new Date().toLocaleDateString("pl-PL"); // "03.05.2025"
   let name = baseName;

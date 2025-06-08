@@ -27,6 +27,8 @@ export default function DisplaySelector() {
   const [scheduleSongs, setScheduleSongs] = useState([]);
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [currentVerseIndex, setCurrentVerseIndex] = useState(0);
+  const [currentText, setCurrentText] = useState("");
+  const [currentSong, setCurrentSong] = useState(null);
 
   useEffect(() => {
     window.api.getDisplays().then(async (list) => {
@@ -56,18 +58,6 @@ export default function DisplaySelector() {
     );
   };
 
-  const handlePresent = async () => {
-    if (!selectedSchedule || !scheduleSongs.length || !selectedId) return;
-
-    setWindowOpened(true);
-    await window.api.openFullscreen(selectedId);
-    setCurrentSongIndex(0);
-    setCurrentVerseIndex(0);
-
-    const song = await window.api.getSong(scheduleSongs[0].song_id);
-    window.api.setFullscreenContent(song.verses[0].text);
-  };
-
   const sendCurrent = async (
     songIndex = currentSongIndex,
     verseIndex = currentVerseIndex
@@ -75,10 +65,22 @@ export default function DisplaySelector() {
     const songMeta = scheduleSongs[songIndex];
     if (!songMeta) return;
     const songData = await window.api.getSong(songMeta.song_id);
+    setCurrentSong(songData);
     const verse = songData.verses?.[verseIndex];
     if (verse) {
       window.api.setFullscreenContent(verse.text);
+      setCurrentText(verse.text);
     }
+  };
+
+  const handlePresent = async () => {
+    if (!selectedSchedule || !scheduleSongs.length || !selectedId) return;
+
+    setWindowOpened(true);
+    await window.api.openFullscreen(selectedId);
+    setCurrentSongIndex(0);
+    setCurrentVerseIndex(0);
+    sendCurrent(0, 0);
   };
 
   useEffect(() => {
@@ -92,17 +94,38 @@ export default function DisplaySelector() {
           scheduleSongs[currentSongIndex].song_id
         );
         if (currentVerseIndex < current.verses.length - 1) {
-          setCurrentVerseIndex((prev) => {
-            const next = prev + 1;
-            sendCurrent(currentSongIndex, next);
-            return next;
-          });
+          const next = currentVerseIndex + 1;
+          setCurrentVerseIndex(next);
+          sendCurrent(currentSongIndex, next);
         } else if (currentSongIndex < scheduleSongs.length - 1) {
           const nextSong = currentSongIndex + 1;
           setCurrentSongIndex(nextSong);
           setCurrentVerseIndex(0);
           sendCurrent(nextSong, 0);
         }
+      } else if (event.code === "ArrowLeft") {
+        event.preventDefault();
+
+        if (currentVerseIndex > 0) {
+          const prev = currentVerseIndex - 1;
+          setCurrentVerseIndex(prev);
+          sendCurrent(currentSongIndex, prev);
+        } else if (currentSongIndex > 0) {
+          const prevSong = currentSongIndex - 1;
+          const prevSongData = await window.api.getSong(
+            scheduleSongs[prevSong].song_id
+          );
+          const lastVerse = prevSongData.verses.length - 1;
+          setCurrentSongIndex(prevSong);
+          setCurrentVerseIndex(lastVerse);
+          sendCurrent(prevSong, lastVerse);
+        }
+      } else if (event.code === "ArrowUp") {
+        event.preventDefault();
+        handleNextSong();
+      } else if (event.code === "ArrowDown") {
+        event.preventDefault();
+        handlePreviousSong();
       }
     };
 
@@ -119,6 +142,43 @@ export default function DisplaySelector() {
     }
   };
 
+  const handlePreviousSong = async () => {
+    if (currentSongIndex > 0) {
+      const prev = currentSongIndex - 1;
+      const prevSongData = await window.api.getSong(scheduleSongs[prev].song_id);
+      const lastVerse = prevSongData.verses.length - 1;
+      setCurrentSongIndex(prev);
+      setCurrentVerseIndex(lastVerse);
+      sendCurrent(prev, lastVerse);
+    }
+  };
+
+  const handleNextVerse = async () => {
+    const songData = await window.api.getSong(scheduleSongs[currentSongIndex].song_id);
+    if (currentVerseIndex < songData.verses.length - 1) {
+      const next = currentVerseIndex + 1;
+      setCurrentVerseIndex(next);
+      sendCurrent(currentSongIndex, next);
+    } else {
+      handleNextSong();
+    }
+  };
+
+  const handlePrevVerse = async () => {
+    if (currentVerseIndex > 0) {
+      const prev = currentVerseIndex - 1;
+      setCurrentVerseIndex(prev);
+      sendCurrent(currentSongIndex, prev);
+    } else if (currentSongIndex > 0) {
+      const prevSong = currentSongIndex - 1;
+      const prevSongData = await window.api.getSong(scheduleSongs[prevSong].song_id);
+      const lastVerse = prevSongData.verses.length - 1;
+      setCurrentSongIndex(prevSong);
+      setCurrentVerseIndex(lastVerse);
+      sendCurrent(prevSong, lastVerse);
+    }
+  };
+
   useEffect(() => {
     if (!selectedSchedule) return;
     window.api.getScheduleSongs(selectedSchedule.id).then(setScheduleSongs);
@@ -129,6 +189,18 @@ export default function DisplaySelector() {
     const updated = await window.api.getScheduleSongs(selectedSchedule.id);
     setScheduleSongs(updated);
   };
+
+  useEffect(() => {
+    if (!windowOpened) return;
+    if (currentSongIndex >= scheduleSongs.length) {
+      const newIndex = Math.max(scheduleSongs.length - 1, 0);
+      setCurrentSongIndex(newIndex);
+      setCurrentVerseIndex(0);
+      sendCurrent(newIndex, 0);
+    } else {
+      sendCurrent(currentSongIndex, currentVerseIndex);
+    }
+  }, [scheduleSongs]);
 
   useEffect(() => {
     console.log("Selected schedule:", selectedSchedule);
@@ -173,8 +245,17 @@ export default function DisplaySelector() {
           />
         </div>
         <div className="flex-2 flex flex-col">
-          <div className="flex-1 bg-black text-white overflow-hidden">
-            <SongView song={song} />
+          <div className="flex-1 bg-black text-white overflow-hidden p-4">
+            {windowOpened ? (
+              <div
+                className="w-full h-full overflow-auto"
+                dangerouslySetInnerHTML={{
+                  __html: currentText.replace(/\n/g, "<br />"),
+                }}
+              />
+            ) : (
+              <SongView song={song} />
+            )}
           </div>
           <div className="flex-1 flex">
             <Schedule
@@ -216,31 +297,45 @@ export default function DisplaySelector() {
 
         <button
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          disabled={!selectedSongId || verse === 0}
+          onClick={windowOpened ? handlePreviousSong : undefined}
+          disabled={windowOpened ? currentSongIndex === 0 && currentVerseIndex === 0 : !selectedSongId || verse === 0}
           title="Poprzednia pieśń"
         >
           <FaAngleDoubleLeft size={40} />
         </button>
         <button
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={() => sendContent(verse - 1)}
-          disabled={!selectedSongId || verse === 0}
+          onClick={windowOpened ? handlePrevVerse : () => sendContent(verse - 1)}
+          disabled={
+            windowOpened
+              ? currentSongIndex === 0 && currentVerseIndex === 0
+              : !selectedSongId || verse === 0
+          }
           title="Poprzednia zwrotka"
         >
           <FaAngleLeft size={40} />
         </button>
         <button
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={() => sendContent(verse + 1)}
-          disabled={!selectedSongId || verse === song?.verses?.length - 1}
+          onClick={windowOpened ? handleNextVerse : () => sendContent(verse + 1)}
+          disabled={
+            windowOpened
+              ? currentSongIndex === scheduleSongs.length - 1 &&
+                currentVerseIndex === (currentSong?.verses?.length || 1) - 1
+              : !selectedSongId || verse === song?.verses?.length - 1
+          }
           title="Następna zwrotka"
         >
           <FaAngleRight size={40} />
         </button>
         <button
-          onClick={handleNextSong}
+          onClick={windowOpened ? handleNextSong : undefined}
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          disabled={!selectedSongId || verse === song?.verses?.length - 1}
+          disabled={
+            windowOpened
+              ? currentSongIndex === scheduleSongs.length - 1
+              : !selectedSongId || verse === song?.verses?.length - 1
+          }
           title="Następna pieśń"
         >
           <FaAngleDoubleRight size={40} />

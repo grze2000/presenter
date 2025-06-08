@@ -29,6 +29,8 @@ export default function DisplaySelector() {
   const [currentVerseIndex, setCurrentVerseIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [currentSong, setCurrentSong] = useState(null);
+  const [previewSong, setPreviewSong] = useState(null);
+  const [previewVerseIndex, setPreviewVerseIndex] = useState(0);
 
   useEffect(() => {
     window.api.getDisplays().then(async (list) => {
@@ -73,9 +75,26 @@ export default function DisplaySelector() {
     }
   };
 
+  const openPreview = async (songId) => {
+    const data = await window.api.getSong(songId);
+    setPreviewSong(data);
+    setPreviewVerseIndex(0);
+  };
+
+  const handlePreviewNext = () => {
+    if (!previewSong) return;
+    setPreviewVerseIndex((v) => Math.min(v + 1, previewSong.verses.length - 1));
+  };
+
+  const handlePreviewPrev = () => {
+    if (!previewSong) return;
+    setPreviewVerseIndex((v) => Math.max(v - 1, 0));
+  };
+
   const handlePresent = async () => {
     if (!selectedSchedule || !scheduleSongs.length || !selectedId) return;
 
+    setPreviewSong(null);
     setWindowOpened(true);
     await window.api.openFullscreen(selectedId);
     setCurrentSongIndex(0);
@@ -86,6 +105,8 @@ export default function DisplaySelector() {
   useEffect(() => {
     const handleAction = async (code) => {
       if (!windowOpened || !scheduleSongs.length) return;
+
+      setPreviewSong(null);
 
       if (code === "Space" || code === "ArrowRight") {
         const current = await window.api.getSong(
@@ -143,6 +164,7 @@ export default function DisplaySelector() {
   }, [windowOpened, currentSongIndex, currentVerseIndex, scheduleSongs]);
 
   const handleNextSong = async () => {
+    setPreviewSong(null);
     if (currentSongIndex < scheduleSongs.length - 1) {
       const next = currentSongIndex + 1;
       setCurrentSongIndex(next);
@@ -152,6 +174,7 @@ export default function DisplaySelector() {
   };
 
   const handlePreviousSong = async () => {
+    setPreviewSong(null);
     if (currentSongIndex > 0) {
       const prev = currentSongIndex - 1;
       const prevSongData = await window.api.getSong(scheduleSongs[prev].song_id);
@@ -163,6 +186,7 @@ export default function DisplaySelector() {
   };
 
   const handleNextVerse = async () => {
+    setPreviewSong(null);
     const songData = await window.api.getSong(scheduleSongs[currentSongIndex].song_id);
     if (currentVerseIndex < songData.verses.length - 1) {
       const next = currentVerseIndex + 1;
@@ -174,6 +198,7 @@ export default function DisplaySelector() {
   };
 
   const handlePrevVerse = async () => {
+    setPreviewSong(null);
     if (currentVerseIndex > 0) {
       const prev = currentVerseIndex - 1;
       setCurrentVerseIndex(prev);
@@ -251,11 +276,37 @@ export default function DisplaySelector() {
             setSelectedSongId={setSelectedSongId}
             selectedSchedule={selectedSchedule}
             onSongAdded={handleSongAdded}
+            onPreview={openPreview}
           />
         </div>
         <div className="flex-2 flex flex-col">
           <div className="flex-1 bg-black text-white overflow-hidden p-4">
-            {windowOpened ? (
+            {previewSong ? (
+              <div className="h-full flex flex-col">
+                <div
+                  className="flex-1 overflow-auto"
+                  dangerouslySetInnerHTML={{
+                    __html: previewSong.verses[previewVerseIndex].text.replace(/\n/g, "<br />"),
+                  }}
+                />
+                <div className="flex justify-center gap-2 mt-2">
+                  <button
+                    className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
+                    onClick={handlePreviewPrev}
+                    disabled={previewVerseIndex === 0}
+                  >
+                    <FaAngleLeft size={30} />
+                  </button>
+                  <button
+                    className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
+                    onClick={handlePreviewNext}
+                    disabled={previewVerseIndex === previewSong.verses.length - 1}
+                  >
+                    <FaAngleRight size={30} />
+                  </button>
+                </div>
+              </div>
+            ) : windowOpened ? (
               <div
                 className="w-full h-full overflow-auto"
                 dangerouslySetInnerHTML={{
@@ -272,6 +323,7 @@ export default function DisplaySelector() {
               scheduleSongs={scheduleSongs}
               setScheduleSongs={setScheduleSongs}
               currentSongId={scheduleSongs[currentSongIndex]?.song_id}
+              onPreviewSong={openPreview}
             />
           </div>
         </div>

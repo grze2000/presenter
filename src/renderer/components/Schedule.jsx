@@ -7,6 +7,7 @@ export const Schedule = ({
   scheduleSongs,
   setScheduleSongs,
   currentSongId,
+  onPreviewSong,
 }) => {
   const [songs, setSongs] = useState([]);
 
@@ -72,6 +73,7 @@ export const Schedule = ({
             className={`border-b border-gray-300 w-full cursor-pointer hover:bg-gray-100 transition-colors text-left flex items-center pr-2 ${
               s.song_id === currentSongId ? "bg-green-100" : ""
             }`}
+            onClick={() => onPreviewSong && onPreviewSong(s.song_id)}
           >
             <span className="border-r border-gray-300 py-1 px-3">
               {index + 1}.
@@ -80,7 +82,10 @@ export const Schedule = ({
             <div className="flex items-center gap-1">
               <button
                 disabled={index === 0}
-                onClick={() => swapSongs(index, index - 1)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  swapSongs(index, index - 1);
+                }}
                 className={`transition-colors h-6 w-6 flex justify-center items-center rounded ${
                   index === 0
                     ? "text-gray-300"
@@ -91,7 +96,10 @@ export const Schedule = ({
               </button>
               <button
                 disabled={index === scheduleSongs.length - 1}
-                onClick={() => swapSongs(index, index + 1)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  swapSongs(index, index + 1);
+                }}
                 className={`transition-colors h-6 w-6 flex justify-center items-center rounded ${
                   index === scheduleSongs.length - 1
                     ? "text-gray-300"
@@ -102,7 +110,10 @@ export const Schedule = ({
               </button>
               <button
                 className="hover:bg-green-200 transition-colors h-6 w-6 flex justify-center items-center rounded cursor-pointer text-gray-700"
-                onClick={() => handleRemove(s.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemove(s.id);
+                }}
               >
                 <IoClose size={20} />
               </button>

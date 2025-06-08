@@ -46,6 +46,10 @@
           "<br>"
         );
       });
+
+      document.addEventListener("keydown", (e) => {
+        window.fullscreen.sendKeyDown(e.code);
+      });
     </script>
   </body>
 </html>

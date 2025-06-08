@@ -84,12 +84,10 @@ export default function DisplaySelector() {
   };
 
   useEffect(() => {
-    const handleKeyDown = async (event) => {
+    const handleAction = async (code) => {
       if (!windowOpened || !scheduleSongs.length) return;
 
-      if (event.code === "Space" || event.code === "ArrowRight") {
-        event.preventDefault();
-
+      if (code === "Space" || code === "ArrowRight") {
         const current = await window.api.getSong(
           scheduleSongs[currentSongIndex].song_id
         );
@@ -103,9 +101,7 @@ export default function DisplaySelector() {
           setCurrentVerseIndex(0);
           sendCurrent(nextSong, 0);
         }
-      } else if (event.code === "ArrowLeft") {
-        event.preventDefault();
-
+      } else if (code === "ArrowLeft") {
         if (currentVerseIndex > 0) {
           const prev = currentVerseIndex - 1;
           setCurrentVerseIndex(prev);
@@ -120,17 +116,30 @@ export default function DisplaySelector() {
           setCurrentVerseIndex(lastVerse);
           sendCurrent(prevSong, lastVerse);
         }
-      } else if (event.code === "ArrowUp") {
-        event.preventDefault();
+      } else if (code === "ArrowUp") {
         handleNextSong();
-      } else if (event.code === "ArrowDown") {
-        event.preventDefault();
+      } else if (code === "ArrowDown") {
         handlePreviousSong();
+      } else if (code === "Escape") {
+        setWindowOpened(false);
+        window.api.closeFullscreen();
       }
     };
 
+    const handleKeyDown = (event) => {
+      event.preventDefault();
+      handleAction(event.code);
+    };
+
+    const removeFs = window.api.onFullscreenKeyDown?.((code) => {
+      handleAction(code);
+    });
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      removeFs?.();
+    };
   }, [windowOpened, currentSongIndex, currentVerseIndex, scheduleSongs]);
 
   const handleNextSong = async () => {

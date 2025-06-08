@@ -9,4 +9,7 @@ contextBridge.exposeInMainWorld("fullscreen", {
       callback(content);
     });
   },
+  sendKeyDown: (code) => {
+    ipcRenderer.send("fullscreen-keydown", code);
+  },
 });

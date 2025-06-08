@@ -1,10 +1,10 @@
 import sqlite3
 import re
 
-with open('src/data/baza.slb', encoding='utf-8') as f:
+with open('data/baza.slb', encoding='utf-8') as f:
     content = f.read()
 
-db = sqlite3.connect('src/data/database.db')
+db = sqlite3.connect('data/database.db')
 cur = db.cursor()
 
 # Create tables
@@ -52,4 +52,4 @@ for song_block in re.findall(r"\[tytulBegin\](.*?)\[tytulEnd\]", content, re.S):
 
 db.commit()
 db.close()
-print("✅ Baza danych została zbudowana w src/data/database.db")
+print("✅ Baza danych została zbudowana w data/database.db")

@@ -177,7 +177,9 @@ export default function DisplaySelector() {
     setPreviewSong(null);
     if (currentSongIndex > 0) {
       const prev = currentSongIndex - 1;
-      const prevSongData = await window.api.getSong(scheduleSongs[prev].song_id);
+      const prevSongData = await window.api.getSong(
+        scheduleSongs[prev].song_id
+      );
       const lastVerse = prevSongData.verses.length - 1;
       setCurrentSongIndex(prev);
       setCurrentVerseIndex(lastVerse);
@@ -187,7 +189,9 @@ export default function DisplaySelector() {
 
   const handleNextVerse = async () => {
     setPreviewSong(null);
-    const songData = await window.api.getSong(scheduleSongs[currentSongIndex].song_id);
+    const songData = await window.api.getSong(
+      scheduleSongs[currentSongIndex].song_id
+    );
     if (currentVerseIndex < songData.verses.length - 1) {
       const next = currentVerseIndex + 1;
       setCurrentVerseIndex(next);
@@ -205,7 +209,9 @@ export default function DisplaySelector() {
       sendCurrent(currentSongIndex, prev);
     } else if (currentSongIndex > 0) {
       const prevSong = currentSongIndex - 1;
-      const prevSongData = await window.api.getSong(scheduleSongs[prevSong].song_id);
+      const prevSongData = await window.api.getSong(
+        scheduleSongs[prevSong].song_id
+      );
       const lastVerse = prevSongData.verses.length - 1;
       setCurrentSongIndex(prevSong);
       setCurrentVerseIndex(lastVerse);
@@ -286,7 +292,10 @@ export default function DisplaySelector() {
                 <div
                   className="flex-1 overflow-auto"
                   dangerouslySetInnerHTML={{
-                    __html: previewSong.verses[previewVerseIndex].text.replace(/\n/g, "<br />"),
+                    __html: previewSong.verses[previewVerseIndex].text.replace(
+                      /\n/g,
+                      "<br />"
+                    ),
                   }}
                 />
                 <div className="flex justify-center gap-2 mt-2">
@@ -300,7 +309,9 @@ export default function DisplaySelector() {
                   <button
                     className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
                     onClick={handlePreviewNext}
-                    disabled={previewVerseIndex === previewSong.verses.length - 1}
+                    disabled={
+                      previewVerseIndex === previewSong.verses.length - 1
+                    }
                   >
                     <FaAngleRight size={30} />
                   </button>
@@ -350,6 +361,10 @@ export default function DisplaySelector() {
               windowOpened
             }
             className="mr-auto rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-green-400 transition-colors cursor-pointer"
+            style={{
+              backgroundColor: "#4CAF50",
+              color: "white",
+            }}
           >
             <LuPresentation size={30} />
             Prezentuj
@@ -359,14 +374,20 @@ export default function DisplaySelector() {
         <button
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
           onClick={windowOpened ? handlePreviousSong : undefined}
-          disabled={windowOpened ? currentSongIndex === 0 && currentVerseIndex === 0 : !selectedSongId || verse === 0}
+          disabled={
+            windowOpened
+              ? currentSongIndex === 0 && currentVerseIndex === 0
+              : !selectedSongId || verse === 0
+          }
           title="Poprzednia pieśń"
         >
           <FaAngleDoubleLeft size={40} />
         </button>
         <button
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={windowOpened ? handlePrevVerse : () => sendContent(verse - 1)}
+          onClick={
+            windowOpened ? handlePrevVerse : () => sendContent(verse - 1)
+          }
           disabled={
             windowOpened
               ? currentSongIndex === 0 && currentVerseIndex === 0
@@ -378,7 +399,9 @@ export default function DisplaySelector() {
         </button>
         <button
           className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={windowOpened ? handleNextVerse : () => sendContent(verse + 1)}
+          onClick={
+            windowOpened ? handleNextVerse : () => sendContent(verse + 1)
+          }
           disabled={
             windowOpened
               ? currentSongIndex === scheduleSongs.length - 1 &&

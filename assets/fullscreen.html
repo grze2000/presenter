@@ -20,37 +20,53 @@
         font-family: "Segoe UI", "Segoe UI Variable", Arial, sans-serif;
         font-weight: bold;
       }
+
       #content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
         padding: 2rem;
-        max-width: 90vw;
-        max-height: 90vh;
-        width: 100%;
-        height: 100%;
-        font-size: 5vw; /* 50% pierwotnego rozmiaru */
+        font-size: 5vw;
         line-height: 1.2;
-        word-break: break-word;
-        overflow-wrap: break-word;
+        white-space: pre-wrap;
         overflow: hidden;
       }
     </style>
+    <script>
+      function fitText(el, maxSize = 200, minSize = 10, marginRatio = 0.05) {
+        if (!el) return;
+
+        const parent = document.body;
+
+        const availableWidth = parent.clientWidth * (1 - 2 * marginRatio);
+        const availableHeight = parent.clientHeight * (1 - 2 * marginRatio);
+
+        let size = maxSize;
+        el.style.fontSize = size + "px";
+
+        while (
+          (el.scrollHeight > availableHeight ||
+            el.scrollWidth > availableWidth) &&
+          size > minSize
+        ) {
+          size--;
+          el.style.fontSize = size + "px";
+        }
+      }
+    </script>
   </head>
   <body>
-    <div id="content">Czekam na treść...</div>
+    <div id="content"></div>
     <script>
-      console.log("[fullscreen.html] script loaded");
-      window.fullscreen.onContentUpdate((text) => {
-        document.getElementById("content").innerHTML = text.replace(
-          /\n/g,
-          "<br>"
-        );
-      });
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("[fullscreen.html] script loaded");
+        window.fullscreen.onContentUpdate((text) => {
+          const content = document.getElementById("content");
+          if (!content) return;
+          content.innerHTML = text.replace(/\n/g, "<br>");
+          fitText(content);
+        });
 
-      document.addEventListener("keydown", (e) => {
-        window.fullscreen.sendKeyDown(e.code);
+        document.addEventListener("keydown", (e) => {
+          window.fullscreen.sendKeyDown(e.code);
+        });
       });
     </script>
   </body>

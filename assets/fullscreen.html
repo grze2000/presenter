@@ -38,17 +38,25 @@
         const availableWidth = parent.clientWidth * (1 - 2 * marginRatio);
         const availableHeight = parent.clientHeight * (1 - 2 * marginRatio);
 
-        let size = maxSize;
-        el.style.fontSize = size + "px";
+        let low = minSize;
+        let high = maxSize;
+        let best = minSize;
 
-        while (
-          (el.scrollHeight > availableHeight ||
-            el.scrollWidth > availableWidth) &&
-          size > minSize
-        ) {
-          size--;
-          el.style.fontSize = size + "px";
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          el.style.fontSize = mid + "px";
+
+          const { scrollWidth, scrollHeight } = el;
+
+          if (scrollWidth <= availableWidth && scrollHeight <= availableHeight) {
+            best = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
         }
+
+        el.style.fontSize = best + "px";
       }
     </script>
   </head>

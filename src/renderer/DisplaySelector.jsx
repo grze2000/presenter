@@ -12,6 +12,7 @@ import { Schedule } from "./components/Schedule";
 import { ScheduleList } from "./components/ScheduleList";
 import { SongList } from "./components/SongList";
 import { SongView } from "./components/SongView";
+import { SongEditor } from "./components/SongEditor";
 
 export default function DisplaySelector() {
   const [displays, setDisplays] = useState([]);
@@ -31,6 +32,8 @@ export default function DisplaySelector() {
   const [currentSong, setCurrentSong] = useState(null);
   const [previewSong, setPreviewSong] = useState(null);
   const [previewVerseIndex, setPreviewVerseIndex] = useState(0);
+  const [editorSongId, setEditorSongId] = useState(null);
+  const [previousTab, setPreviousTab] = useState("categories");
 
   useEffect(() => {
     window.api.getDisplays().then(async (list) => {
@@ -79,6 +82,12 @@ export default function DisplaySelector() {
     const data = await window.api.getSong(songId);
     setPreviewSong(data);
     setPreviewVerseIndex(0);
+  };
+
+  const openEditor = (songId = null) => {
+    setEditorSongId(songId);
+    setPreviousTab(selectedTab);
+    setSelectedTab("editor");
   };
 
   const handlePreviewNext = () => {
@@ -148,6 +157,16 @@ export default function DisplaySelector() {
     };
 
     const handleKeyDown = (event) => {
+      const target = event.target;
+      const tag = target.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
       event.preventDefault();
       handleAction(event.code);
     };
@@ -249,95 +268,114 @@ export default function DisplaySelector() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 border-r border-gray-300">
-          <div className="border-b border-gray-300 flex pt-1 px-1 gap-1">
-            <button
-              className={`py-1 px-2 border-l border-t border-r border-gray-300 bg-gray-200 text-sm cursor-pointer ${
-                selectedTab === "categories" ? "bg-white" : ""
-              }`}
-              onClick={() => setSelectedTab("categories")}
-            >
-              Kategorie
-            </button>
-            <button
-              className={`py-1 px-2 border-l border-t border-r border-gray-300 bg-gray-200 text-sm cursor-pointer ${
-                selectedTab === "schedules" ? "bg-white" : ""
-              }`}
-              onClick={() => setSelectedTab("schedules")}
-            >
-              Harmonogramy
-            </button>
-            <button onClick={() => setSelectedTab("text")}>Notatki</button>
-          </div>
-          {selectedTab === "categories" ? (
-            <CategoryList setCategory={setCategory} />
-          ) : selectedTab === "schedules" ? (
-            <ScheduleList setSelectedSchedule={setSelectedSchedule} />
-          ) : null}
-          {selectedTab === "text" && <TextTab />}
-        </div>
-        <div className="flex-1 border-r border-gray-300 overflow-auto">
-          <SongList
-            category={category}
-            setSelectedSongId={setSelectedSongId}
-            selectedSchedule={selectedSchedule}
-            onSongAdded={handleSongAdded}
-            onPreview={openPreview}
+        {selectedTab === "editor" ? (
+          <SongEditor
+            songId={editorSongId}
+            setSongId={setEditorSongId}
+            onBack={() => setSelectedTab(previousTab)}
           />
-        </div>
-        <div className="flex-2 flex flex-col">
-          <div className="flex-1 bg-black text-white overflow-hidden p-4">
-            {previewSong ? (
-              <div className="h-full flex flex-col">
-                <div
-                  className="flex-1 overflow-auto"
-                  dangerouslySetInnerHTML={{
-                    __html: previewSong.verses[previewVerseIndex].text.replace(
-                      /\n/g,
-                      "<br />"
-                    ),
-                  }}
-                />
-                <div className="flex justify-center gap-2 mt-2">
-                  <button
-                    className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
-                    onClick={handlePreviewPrev}
-                    disabled={previewVerseIndex === 0}
-                  >
-                    <FaAngleLeft size={30} />
-                  </button>
-                  <button
-                    className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
-                    onClick={handlePreviewNext}
-                    disabled={
-                      previewVerseIndex === previewSong.verses.length - 1
-                    }
-                  >
-                    <FaAngleRight size={30} />
-                  </button>
-                </div>
+        ) : (
+          <>
+            <div className="flex-1 border-r border-gray-300">
+              <div className="border-b border-gray-300 flex pt-1 px-1 gap-1">
+                <button
+                  className={`py-1 px-2 border-l border-t border-r border-gray-300 bg-gray-200 text-sm cursor-pointer ${
+                    selectedTab === "categories" ? "bg-white" : ""
+                  }`}
+                  onClick={() => setSelectedTab("categories")}
+                >
+                  Kategorie
+                </button>
+                <button
+                  className={`py-1 px-2 border-l border-t border-r border-gray-300 bg-gray-200 text-sm cursor-pointer ${
+                    selectedTab === "schedules" ? "bg-white" : ""
+                  }`}
+                  onClick={() => setSelectedTab("schedules")}
+                >
+                  Harmonogramy
+                </button>
+                <button
+                  className={`py-1 px-2 border-l border-t border-r border-gray-300 bg-gray-200 text-sm cursor-pointer ${
+                    selectedTab === "editor" ? "bg-white" : ""
+                  }`}
+                  onClick={() => openEditor(null)}
+                >
+                  Edytor pieśni
+                </button>
+                <button onClick={() => setSelectedTab("text")}>Notatki</button>
               </div>
-            ) : windowOpened ? (
-              <div
-                className="w-full h-full overflow-auto"
-                dangerouslySetInnerHTML={{
-                  __html: currentText.replace(/\n/g, "<br />"),
-                }}
+              {selectedTab === "categories" ? (
+                <CategoryList setCategory={setCategory} />
+              ) : selectedTab === "schedules" ? (
+                <ScheduleList setSelectedSchedule={setSelectedSchedule} />
+              ) : selectedTab === "text" ? (
+                <TextTab />
+              ) : null}
+            </div>
+            <div className="flex-1 border-r border-gray-300 overflow-auto">
+              <SongList
+                category={category}
+                setSelectedSongId={setSelectedSongId}
+                selectedSchedule={selectedSchedule}
+                onSongAdded={handleSongAdded}
+                onPreview={openPreview}
+                onEditSong={(id) => openEditor(id)}
               />
-            ) : (
-              <SongView song={song} />
-            )}
-          </div>
-          <div className="flex-1 flex">
-            <Schedule
-              selectedSchedule={selectedSchedule}
-              scheduleSongs={scheduleSongs}
-              setScheduleSongs={setScheduleSongs}
-              currentSongId={scheduleSongs[currentSongIndex]?.song_id}
-              onPreviewSong={openPreview}
-            />
-          </div>
-        </div>
+            </div>
+            <div className="flex-2 flex flex-col">
+              <div className="flex-1 bg-black text-white overflow-hidden p-4">
+                {previewSong ? (
+                  <div className="h-full flex flex-col">
+                    <div
+                      className="flex-1 overflow-auto"
+                      dangerouslySetInnerHTML={{
+                        __html: previewSong.verses[
+                          previewVerseIndex
+                        ].text.replace(/\n/g, "<br />"),
+                      }}
+                    />
+                    <div className="flex justify-center gap-2 mt-2">
+                      <button
+                        className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
+                        onClick={handlePreviewPrev}
+                        disabled={previewVerseIndex === 0}
+                      >
+                        <FaAngleLeft size={30} />
+                      </button>
+                      <button
+                        className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-200 disabled:text-gray-400 disabled:hover:bg-gray-300"
+                        onClick={handlePreviewNext}
+                        disabled={
+                          previewVerseIndex === previewSong.verses.length - 1
+                        }
+                      >
+                        <FaAngleRight size={30} />
+                      </button>
+                    </div>
+                  </div>
+                ) : windowOpened ? (
+                  <div
+                    className="w-full h-full overflow-auto"
+                    dangerouslySetInnerHTML={{
+                      __html: currentText.replace(/\n/g, "<br />"),
+                    }}
+                  />
+                ) : (
+                  <SongView song={song} />
+                )}
+              </div>
+              <div className="flex-1 flex">
+                <Schedule
+                  selectedSchedule={selectedSchedule}
+                  scheduleSongs={scheduleSongs}
+                  setScheduleSongs={setScheduleSongs}
+                  currentSongId={scheduleSongs[currentSongIndex]?.song_id}
+                  onPreviewSong={openPreview}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
       <div className="border-t border-gray-300 p-2 flex justify-end gap-3">
         {windowOpened ? (

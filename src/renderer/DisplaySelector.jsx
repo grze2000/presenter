@@ -157,6 +157,16 @@ export default function DisplaySelector() {
     };
 
     const handleKeyDown = (event) => {
+      const target = event.target;
+      const tag = target.tagName;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
       event.preventDefault();
       handleAction(event.code);
     };

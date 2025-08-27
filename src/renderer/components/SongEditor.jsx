@@ -68,23 +68,54 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const greenButtonStyle = {
+    cursor: "pointer",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    borderRadius: 4,
+    padding: "4px 8px",
+  };
+
+  const grayButtonStyle = {
+    ...greenButtonStyle,
+    backgroundColor: "#ccc",
+    color: "#000",
+  };
+
+  const verseButtonStyle = (selected) => ({
+    flex: 1,
+    textAlign: "left",
+    padding: "4px 12px",
+    border: "none",
+    borderBottom: "1px solid #ccc",
+    cursor: "pointer",
+    backgroundColor: selected ? "#e5e5e5" : "transparent",
+  });
+
+  const deleteButtonStyle = {
+    padding: "0 8px",
+    border: "none",
+    borderBottom: "1px solid #ccc",
+    cursor: "pointer",
+    background: "transparent",
+    color: "#f44336",
+  };
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <div className="p-2 border-b border-gray-300">
-        <button
-          className="px-2 py-1 bg-gray-300 hover:bg-gray-200 rounded"
-          onClick={() => onBack && onBack()}
-        >
-          Powrót
+      <div className="p-2" style={{ borderBottom: "1px solid #ccc" }}>
+        <button style={grayButtonStyle} onClick={() => onBack && onBack()}>
+          Wróć do listy pieśni
         </button>
       </div>
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-1/4 border-r border-gray-300 flex flex-col">
-          <div className="p-2 border-b border-gray-300">
-            <button
-              className="px-2 py-1 bg-gray-300 hover:bg-gray-200 rounded"
-              onClick={addVerse}
-            >
+        <div
+          className="w-1/4 flex flex-col"
+          style={{ borderRight: "1px solid #ccc" }}
+        >
+          <div className="p-2" style={{ borderBottom: "1px solid #ccc" }}>
+            <button style={greenButtonStyle} onClick={addVerse}>
               Dodaj zwrotkę
             </button>
           </div>
@@ -94,15 +125,13 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
                 <li key={i}>
                   <div className="flex">
                     <button
-                      className={`flex-1 text-left px-3 py-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 ${
-                        current === i ? "bg-gray-200" : ""
-                      }`}
+                      style={verseButtonStyle(current === i)}
                       onClick={() => setCurrent(i)}
                     >
                       Zwrotka {i + 1}
                     </button>
                     <button
-                      className="px-2 text-red-600 border-b border-gray-300 hover:bg-gray-100"
+                      style={deleteButtonStyle}
                       onClick={(e) => {
                         e.stopPropagation();
                         removeVerse(i);
@@ -116,8 +145,14 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
             </ul>
           </div>
         </div>
-        <div className="flex-1 border-r border-gray-300 flex flex-col">
-          <div className="p-2 flex gap-2 items-center border-b border-gray-300">
+        <div
+          className="flex-1 flex flex-col"
+          style={{ borderRight: "1px solid #ccc" }}
+        >
+          <div
+            className="p-2 flex gap-2 items-center"
+            style={{ borderBottom: "1px solid #ccc" }}
+          >
             <input
               className="flex-1 border p-1"
               placeholder="Tytuł"
@@ -135,13 +170,10 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
                 </option>
               ))}
             </select>
-            <button
-              className="px-2 py-1 bg-green-300 hover:bg-green-200 rounded"
-              onClick={handleSave}
-            >
+            <button style={greenButtonStyle} onClick={handleSave}>
               Zapisz
             </button>
-            {saved && <span className="text-green-600">Zapisano</span>}
+            {saved && <span style={{ color: '#16a34a' }}>Zapisano</span>}
           </div>
           <textarea
             className="flex-1 p-2 overflow-auto"

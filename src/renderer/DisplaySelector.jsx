@@ -33,6 +33,7 @@ export default function DisplaySelector() {
   const [previewSong, setPreviewSong] = useState(null);
   const [previewVerseIndex, setPreviewVerseIndex] = useState(0);
   const [editorSongId, setEditorSongId] = useState(null);
+  const [previousTab, setPreviousTab] = useState("categories");
 
   useEffect(() => {
     window.api.getDisplays().then(async (list) => {
@@ -81,6 +82,12 @@ export default function DisplaySelector() {
     const data = await window.api.getSong(songId);
     setPreviewSong(data);
     setPreviewVerseIndex(0);
+  };
+
+  const openEditor = (songId = null) => {
+    setEditorSongId(songId);
+    setPreviousTab(selectedTab);
+    setSelectedTab("editor");
   };
 
   const handlePreviewNext = () => {
@@ -252,7 +259,11 @@ export default function DisplaySelector() {
     <div className="flex flex-1 flex-col">
       <div className="flex-1 flex overflow-hidden">
         {selectedTab === "editor" ? (
-          <SongEditor songId={editorSongId} setSongId={setEditorSongId} />
+          <SongEditor
+            songId={editorSongId}
+            setSongId={setEditorSongId}
+            onBack={() => setSelectedTab(previousTab)}
+          />
         ) : (
           <>
             <div className="flex-1 border-r border-gray-300">
@@ -277,10 +288,7 @@ export default function DisplaySelector() {
                   className={`py-1 px-2 border-l border-t border-r border-gray-300 bg-gray-200 text-sm cursor-pointer ${
                     selectedTab === "editor" ? "bg-white" : ""
                   }`}
-                  onClick={() => {
-                    setEditorSongId(null);
-                    setSelectedTab("editor");
-                  }}
+                  onClick={() => openEditor(null)}
                 >
                   Edytor pieśni
                 </button>
@@ -301,10 +309,7 @@ export default function DisplaySelector() {
                 selectedSchedule={selectedSchedule}
                 onSongAdded={handleSongAdded}
                 onPreview={openPreview}
-                onEditSong={(id) => {
-                  setEditorSongId(id);
-                  setSelectedTab("editor");
-                }}
+                onEditSong={(id) => openEditor(id)}
               />
             </div>
             <div className="flex-2 flex flex-col">

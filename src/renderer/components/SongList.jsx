@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaChevronRight } from "react-icons/fa";
+import { FaChevronRight, FaPen } from "react-icons/fa";
 
 export const SongList = ({
   category,
@@ -7,6 +7,7 @@ export const SongList = ({
   selectedSchedule,
   onSongAdded,
   onPreview,
+  onEditSong,
 }) => {
   const [songs, setSongs] = useState([]);
 
@@ -20,14 +21,16 @@ export const SongList = ({
     <ul>
       {songs.map((s) => (
         <li key={s.id}>
-          <button
-            className="border-b border-gray-300 w-full py-1 px-3 cursor-pointer hover:bg-gray-100 transition-colors text-left flex"
-            onClick={() => {
-              setSelectedSongId(s.id);
-              if (onPreview) onPreview(s.id);
-            }}
-          >
-            <span className="flex-1">{s.title}</span>
+          <div className="border-b border-gray-300 flex">
+            <button
+              className="flex-1 py-1 px-3 text-left cursor-pointer hover:bg-gray-100 transition-colors"
+              onClick={() => {
+                setSelectedSongId(s.id);
+                if (onPreview) onPreview(s.id);
+              }}
+            >
+              {s.title}
+            </button>
             <button
               className="hover:bg-green-200 transition-colors h-6 w-6 flex justify-center items-center rounded cursor-pointer"
               onClick={async (e) => {
@@ -39,7 +42,16 @@ export const SongList = ({
             >
               <FaChevronRight size={14} />
             </button>
-          </button>
+            <button
+              className="hover:bg-blue-200 transition-colors h-6 w-6 flex justify-center items-center rounded cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEditSong) onEditSong(s.id);
+              }}
+            >
+              <FaPen size={14} />
+            </button>
+          </div>
         </li>
       ))}
     </ul>

@@ -89,6 +89,40 @@ ipcMain.handle("get-song", (e, id) => {
   return song;
 });
 
+ipcMain.handle("save-song", (e, song) => {
+  const { id, title, category_code, verses } = song;
+
+  if (id) {
+    db.prepare("UPDATE songs SET title = ?, category_code = ? WHERE id = ?").run(
+      title,
+      category_code,
+      id
+    );
+    db.prepare("DELETE FROM verses WHERE song_id = ?").run(id);
+    const insert = db.prepare(
+      "INSERT INTO verses (song_id, number, text) VALUES (?, ?, ?)"
+    );
+    const tx = db.transaction((verses) => {
+      verses.forEach((v, i) => insert.run(id, i + 1, v.text));
+    });
+    tx(verses);
+    return { id };
+  } else {
+    const info = db
+      .prepare("INSERT INTO songs (title, category_code) VALUES (?, ?)")
+      .run(title, category_code);
+    const songId = info.lastInsertRowid;
+    const insert = db.prepare(
+      "INSERT INTO verses (song_id, number, text) VALUES (?, ?, ?)"
+    );
+    const tx = db.transaction((verses) => {
+      verses.forEach((v, i) => insert.run(songId, i + 1, v.text));
+    });
+    tx(verses);
+    return { id: songId };
+  }
+});
+
 ipcMain.handle("open-fullscreen", (e, displayId) => {
   const display = screen.getAllDisplays().find((d) => d.id === displayId);
   if (!display) return;

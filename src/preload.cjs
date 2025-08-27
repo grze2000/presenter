@@ -25,4 +25,5 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("add-song-to-schedule", scheduleId, songId),
   swapSchedulePositions: (idA, idB) =>
     ipcRenderer.invoke("swap-schedule-positions", idA, idB),
+  saveSong: (song) => ipcRenderer.invoke("save-song", song),
 });

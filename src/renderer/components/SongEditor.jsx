@@ -6,6 +6,7 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
   const [categories, setCategories] = useState([]);
   const [verses, setVerses] = useState([{ text: "" }]);
   const [current, setCurrent] = useState(0);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     window.api.getCategories().then(setCategories);
@@ -43,6 +44,17 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
     });
   };
 
+  const removeVerse = (index) => {
+    if (!window.confirm("Usunąć tę zwrotkę?")) return;
+    setVerses((prev) => {
+      const arr = prev.filter((_, i) => i !== index);
+      if (!arr.length) arr.push({ text: "" });
+      const newCurrent = Math.min(current, arr.length - 1);
+      setCurrent(newCurrent);
+      return arr;
+    });
+  };
+
   const handleSave = async () => {
     const payload = {
       id: songId,
@@ -52,6 +64,8 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
     };
     const res = await window.api.saveSong(payload);
     if (res?.id && setSongId) setSongId(res.id);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
@@ -71,21 +85,32 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
               className="px-2 py-1 bg-gray-300 hover:bg-gray-200 rounded"
               onClick={addVerse}
             >
-              Dodaj slajd
+              Dodaj zwrotkę
             </button>
           </div>
           <div className="flex-1 overflow-auto">
             <ul>
               {verses.map((v, i) => (
                 <li key={i}>
-                  <button
-                    className={`w-full text-left px-3 py-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 ${
-                      current === i ? "bg-gray-200" : ""
-                    }`}
-                    onClick={() => setCurrent(i)}
-                  >
-                    Zwrotka {i + 1}
-                  </button>
+                  <div className="flex">
+                    <button
+                      className={`flex-1 text-left px-3 py-1 border-b border-gray-300 cursor-pointer hover:bg-gray-100 ${
+                        current === i ? "bg-gray-200" : ""
+                      }`}
+                      onClick={() => setCurrent(i)}
+                    >
+                      Zwrotka {i + 1}
+                    </button>
+                    <button
+                      className="px-2 text-red-600 border-b border-gray-300 hover:bg-gray-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeVerse(i);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -116,6 +141,7 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
             >
               Zapisz
             </button>
+            {saved && <span className="text-green-600">Zapisano</span>}
           </div>
           <textarea
             className="flex-1 p-2 overflow-auto"

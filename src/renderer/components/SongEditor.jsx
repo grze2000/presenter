@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export const SongEditor = ({ songId, setSongId, onBack }) => {
   const [title, setTitle] = useState("");
@@ -6,7 +6,6 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
   const [categories, setCategories] = useState([]);
   const [verses, setVerses] = useState([{ text: "" }]);
   const [current, setCurrent] = useState(0);
-  const editorRef = useRef(null);
 
   useEffect(() => {
     window.api.getCategories().then(setCategories);
@@ -29,16 +28,10 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
     }
   }, [songId, categories]);
 
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = verses[current]?.text || "";
-    }
-  }, [current, verses]);
-
-  const handleInput = () => {
-    const html = editorRef.current.innerHTML;
+  const handleInput = (e) => {
+    const text = e.target.value;
     setVerses((prev) =>
-      prev.map((v, i) => (i === current ? { ...v, text: html } : v))
+      prev.map((v, i) => (i === current ? { ...v, text } : v))
     );
   };
 
@@ -124,17 +117,16 @@ export const SongEditor = ({ songId, setSongId, onBack }) => {
               Zapisz
             </button>
           </div>
-          <div
-            ref={editorRef}
+          <textarea
             className="flex-1 p-2 overflow-auto"
-            contentEditable
-            onInput={handleInput}
+            value={verses[current]?.text || ""}
+            onChange={handleInput}
           />
         </div>
         <div className="w-1/3 bg-black text-white p-4 overflow-auto">
           <div
             dangerouslySetInnerHTML={{
-              __html: verses[current]?.text || "",
+              __html: (verses[current]?.text || "").replace(/\n/g, "<br />"),
             }}
           />
         </div>

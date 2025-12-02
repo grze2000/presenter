@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 
@@ -38,18 +38,9 @@ export const Schedule = ({
     return (
       <div className="flex flex-col justify-center items-center flex-1 gap-2">
         <span className="text-gray-400 text-sm">
-          Wybierz harmonogram z listy lub
+          Dodaj pieśni aby utworzyć nowy harmonogram lub wybierz istniejący z
+          listy harmonogramów
         </span>
-        <button
-          className="cursor-pointer bg-gray-200 px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition-colors hover:text-gray-600"
-          onClick={async () => {
-            const { id, name } = await window.api.createSchedule();
-            setSongs([]);
-            console.log("Utworzono harmonogram:", name);
-          }}
-        >
-          Utwórz nowy
-        </button>
       </div>
     );
   }

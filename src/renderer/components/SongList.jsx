@@ -5,6 +5,7 @@ export const SongList = ({
   category,
   setSelectedSongId,
   selectedSchedule,
+  setSelectedSchedule,
   onSongAdded,
   onPreview,
   onEditSong,
@@ -35,8 +36,12 @@ export const SongList = ({
               className="hover:bg-green-200 transition-colors h-6 w-6 flex justify-center items-center rounded cursor-pointer"
               onClick={async (e) => {
                 e.stopPropagation();
-                if (!selectedSchedule) return;
-                await window.api.addSongToSchedule(selectedSchedule.id, s.id);
+                let schedule = selectedSchedule;
+                if (!schedule) {
+                  schedule = await window.api.createSchedule();
+                  setSelectedSchedule?.(schedule);
+                }
+                await window.api.addSongToSchedule(schedule.id, s.id);
                 if (onSongAdded) onSongAdded();
               }}
             >

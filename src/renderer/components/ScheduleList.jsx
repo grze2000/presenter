@@ -1,11 +1,27 @@
 import React, { useEffect, useState } from "react";
 
-export const ScheduleList = ({ setSelectedSchedule }) => {
+export const ScheduleList = ({ setSelectedSchedule, selectedSchedule }) => {
   const [schedules, setSchedules] = useState([]);
 
   useEffect(() => {
-    window.api.getSchedules().then(setSchedules);
-  }, []);
+    const load = async () => {
+      const list = await window.api.getSchedules();
+      if (!list.length) {
+        const created = await window.api.createSchedule();
+        const refreshed = await window.api.getSchedules();
+        setSchedules(refreshed);
+        setSelectedSchedule(created);
+        return;
+      }
+
+      setSchedules(list);
+      if (!selectedSchedule) {
+        setSelectedSchedule(list[0]);
+      }
+    };
+
+    load();
+  }, [selectedSchedule, setSelectedSchedule]);
 
   return (
     <ul>

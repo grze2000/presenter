@@ -344,6 +344,7 @@ export default function DisplaySelector() {
                 category={category}
                 setSelectedSongId={setSelectedSongId}
                 selectedSchedule={selectedSchedule}
+                setSelectedSchedule={setSelectedSchedule}
                 onSongAdded={handleSongAdded}
                 onPreview={openPreview}
                 onEditSong={(id) => openEditor(id)}

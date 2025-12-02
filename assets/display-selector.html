@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';"
+    />
+    <title>Wybierz ekran</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7fb;
+        --text: #1f2933;
+        --muted: #5a6b7a;
+        --card: #ffffff;
+        --border: #d6dce5;
+        --accent: #2563eb;
+        --accent-soft: #e2e8f7;
+        --shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        padding: 14px 16px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .display-card {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--card);
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+      }
+
+      .display-card:hover {
+        border-color: #b8c2d1;
+        box-shadow: var(--shadow);
+        transform: translateY(-1px);
+      }
+
+      .display-card.active {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        box-shadow: var(--shadow);
+      }
+
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .title {
+        font-weight: 700;
+        font-size: 15px;
+      }
+
+      .meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .pill {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        background: #e8eefc;
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid #d6e2fb;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-top: auto;
+      }
+
+      .ghost {
+        border: 1px solid var(--border);
+        background: #eef1f7;
+        color: #1f2933;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: white;
+        border: 1px solid var(--accent);
+      }
+
+      .ghost,
+      .primary {
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .ghost:hover,
+      .primary:hover {
+        box-shadow: var(--shadow);
+        transform: translateY(-1px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div>
+        <h1>Wybierz ekran</h1>
+        <p id="status">Skanowanie ekranow...</p>
+      </div>
+      <div id="list" class="list"></div>
+      <div class="footer">
+        <button id="refresh" class="ghost">Odswiez</button>
+        <div style="flex: 1 1 auto"></div>
+        <button id="close" class="ghost">Zamknij</button>
+      </div>
+    </div>
+    <script>
+      const statusEl = document.getElementById("status");
+      const listEl = document.getElementById("list");
+      const refreshBtn = document.getElementById("refresh");
+      const closeBtn = document.getElementById("close");
+
+      const renderDisplays = async () => {
+        statusEl.textContent = "Skanowanie ekranow...";
+        listEl.innerHTML = "";
+
+        let displays = [];
+        try {
+          displays = await window.api.getDisplays();
+        } catch (error) {
+          console.error(error);
+          statusEl.textContent = "Nie mozna pobrac listy ekranow.";
+          return;
+        }
+
+        const currentId = await window.api.getCurrentDisplayId?.();
+
+        if (!displays.length) {
+          statusEl.textContent = "Brak dostepnych ekranow.";
+          return;
+        }
+
+        statusEl.textContent = "Kliknij ekran, aby ustawic go dla prezentacji.";
+
+        displays.forEach((display) => {
+          const scale =
+            typeof display.scaleFactor === "number"
+              ? `Skalowanie: ${display.scaleFactor.toFixed(2)}x`
+              : "";
+
+          const card = document.createElement("button");
+          card.className = "display-card";
+          if (display.id === currentId) {
+            card.classList.add("active");
+          }
+
+          card.innerHTML = `
+            <div class="card-head">
+              <div class="title">Ekran ${display.id}</div>
+              ${
+                display.id === currentId
+                  ? '<span class="pill">Aktywny</span>'
+                  : ""
+              }
+            </div>
+            <div class="meta">${display.size.width} x ${
+            display.size.height
+          }</div>
+            <div class="meta">Pozycja: ${display.bounds.x}, ${
+            display.bounds.y
+          }</div>
+            ${scale ? `<div class="meta">${scale}</div>` : ""}
+          `;
+
+          card.onclick = async () => {
+            await window.api.selectDisplay(display.id);
+            window.close();
+          };
+
+          listEl.appendChild(card);
+        });
+      };
+
+      refreshBtn.addEventListener("click", renderDisplays);
+      closeBtn.addEventListener("click", () => window.close());
+
+      renderDisplays();
+    </script>
+  </body>
+</html>

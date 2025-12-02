@@ -1,6 +1,6 @@
 {
   "name": "Presenter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "src/main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"electron .\"",
@@ -20,6 +20,7 @@
       "dist/**/*",
       "src/**/*",
       "assets/fullscreen.html",
+      "assets/display-selector.html",
       "data/**/*",
       "preload.cjs",
       "fullscreen-preload.cjs"

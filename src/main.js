@@ -30,6 +30,37 @@ initDatabase(db);
 
 let fsWin = null;
 let mainWin = null;
+let displaySelectorWin = null;
+let preferredDisplayId = null;
+
+const openDisplaySelectorWindow = () => {
+  if (displaySelectorWin && !displaySelectorWin.isDestroyed()) {
+    displaySelectorWin.focus();
+    return;
+  }
+
+  displaySelectorWin = new BrowserWindow({
+    width: 420,
+    height: 480,
+    resizable: false,
+    fullscreenable: false,
+    autoHideMenuBar: true,
+    title: "Wybierz ekran",
+    parent: mainWin ?? undefined,
+    webPreferences: {
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
+    },
+  });
+
+  displaySelectorWin.on("closed", () => {
+    displaySelectorWin = null;
+  });
+
+  displaySelectorWin.loadFile(
+    path.join(__dirname, "..", "assets", "display-selector.html")
+  );
+};
 
 const createWindow = () => {
   mainWin = new BrowserWindow({
@@ -62,7 +93,28 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-ipcMain.handle("get-displays", () => screen.getAllDisplays());
+ipcMain.handle("get-displays", () => {
+  const all = screen.getAllDisplays();
+  if (!preferredDisplayId && all.length) {
+    preferredDisplayId = all[0].id;
+  }
+  return all;
+});
+ipcMain.handle("get-current-display-id", () => preferredDisplayId);
+ipcMain.handle("select-display", (_event, displayId) => {
+  const exists = screen.getAllDisplays().some((d) => d.id === displayId);
+  if (!exists) return { ok: false };
+
+  preferredDisplayId = displayId;
+  if (displaySelectorWin && !displaySelectorWin.isDestroyed()) {
+    displaySelectorWin.close();
+  }
+  mainWin?.webContents.send("display-selected", displayId);
+  return { ok: true };
+});
+ipcMain.handle("open-display-selector", () => {
+  openDisplaySelectorWindow();
+});
 ipcMain.handle("get-categories", () =>
   db.prepare("SELECT * FROM categories").all()
 );

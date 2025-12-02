@@ -5,14 +5,14 @@ import {
   FaAngleLeft,
   FaAngleRight,
 } from "react-icons/fa";
-import { LuPresentation } from "react-icons/lu";
+import { LuMonitor, LuPresentation } from "react-icons/lu";
 import { PiRecordFill } from "react-icons/pi";
 import { CategoryList } from "./components/CategoryList";
 import { Schedule } from "./components/Schedule";
 import { ScheduleList } from "./components/ScheduleList";
+import { SongEditor } from "./components/SongEditor";
 import { SongList } from "./components/SongList";
 import { SongView } from "./components/SongView";
-import { SongEditor } from "./components/SongEditor";
 
 export default function DisplaySelector() {
   const [displays, setDisplays] = useState([]);
@@ -22,7 +22,6 @@ export default function DisplaySelector() {
   const [song, setSong] = useState(null);
   const [verse, setVerse] = useState(0);
   const [windowOpened, setWindowOpened] = useState(false);
-  const [currentDisplayId, setCurrentDisplayId] = useState(null);
   const [selectedTab, setSelectedTab] = useState("categories");
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [scheduleSongs, setScheduleSongs] = useState([]);
@@ -36,16 +35,42 @@ export default function DisplaySelector() {
   const [previousTab, setPreviousTab] = useState("categories");
 
   useEffect(() => {
-    window.api.getDisplays().then(async (list) => {
-      setDisplays(list);
-      const current = await window.api.getCurrentDisplayId?.();
-      setCurrentDisplayId(current);
-      setSelectedId(list?.[0]?.id);
-    });
+    let cancelled = false;
 
-    window.api.onFullscreenClosed(() => {
+    const loadDisplays = async () => {
+      const list = await window.api.getDisplays();
+      if (cancelled) return;
+
+      const current = await window.api.getCurrentDisplayId?.();
+      const fallback =
+        (current && list.find((d) => d.id === current)?.id) ||
+        list?.[0]?.id ||
+        null;
+
+      setDisplays(list);
+      setSelectedId(fallback);
+
+      if (!current && fallback && window.api.selectDisplay) {
+        window.api.selectDisplay(fallback);
+      }
+    };
+
+    loadDisplays();
+
+    const removeFullscreenClosed = window.api.onFullscreenClosed(() => {
       setWindowOpened(false);
     });
+
+    const removeDisplaySelected = window.api.onDisplaySelected?.((id) => {
+      setSelectedId(id);
+      window.api.getDisplays()?.then(setDisplays);
+    });
+
+    return () => {
+      cancelled = true;
+      removeFullscreenClosed?.();
+      removeDisplaySelected?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -265,6 +290,8 @@ export default function DisplaySelector() {
     console.log("Selected schedule:", selectedSchedule);
   }, [selectedSchedule]);
 
+  const selectedDisplay = displays.find((d) => d.id === selectedId);
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex-1 flex overflow-hidden">
@@ -377,120 +404,116 @@ export default function DisplaySelector() {
           </>
         )}
       </div>
-      <div className="border-t border-gray-300 p-2 flex justify-end gap-3">
-        {windowOpened ? (
+      <div className="border-t border-gray-300 p-2 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
-            className="mr-auto rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-red-400 hover:bg-red-300 transition-colors cursor-pointer"
-            onClick={() => {
-              setWindowOpened(false);
-              window.api.closeFullscreen();
-            }}
+            onClick={() => window.api.openDisplaySelector?.()}
+            className="rounded py-2 px-3 flex flex-col items-center gap-2 font-bold bg-blue-100 border border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer text-sm"
+            title="Otworz okno wyboru ekranu"
           >
-            <PiRecordFill size={30} />
-            Zakończ
+            <LuMonitor size={22} />
+            <span>Wybierz ekran</span>
           </button>
-        ) : (
+          {windowOpened ? (
+            <button
+              className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-red-400 hover:bg-red-300 transition-colors cursor-pointer"
+              onClick={() => {
+                setWindowOpened(false);
+                window.api.closeFullscreen();
+              }}
+            >
+              <PiRecordFill size={30} />
+              Zakoncz
+            </button>
+          ) : (
+            <button
+              onClick={handlePresent}
+              disabled={
+                !selectedSchedule ||
+                !scheduleSongs.length ||
+                !selectedId ||
+                windowOpened
+              }
+              className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-green-400 transition-colors cursor-pointer"
+              style={{
+                backgroundColor: "#4CAF50",
+                color: "white",
+              }}
+            >
+              <LuPresentation size={30} />
+              Prezentuj
+            </button>
+          )}
+        </div>
+
+        <div className="ml-auto flex items-center gap-3">
           <button
-            onClick={handlePresent}
+            className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
+            onClick={windowOpened ? handlePreviousSong : undefined}
             disabled={
-              !selectedSchedule ||
-              !scheduleSongs.length ||
-              !selectedId ||
               windowOpened
+                ? currentSongIndex === 0 && currentVerseIndex === 0
+                : !selectedSongId || verse === 0
             }
-            className="mr-auto rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-green-400 transition-colors cursor-pointer"
-            style={{
-              backgroundColor: "#4CAF50",
-              color: "white",
-            }}
+            title="Poprzednia piesn"
           >
-            <LuPresentation size={30} />
-            Prezentuj
+            <FaAngleDoubleLeft size={40} />
           </button>
-        )}
-
-        <button
-          className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={windowOpened ? handlePreviousSong : undefined}
-          disabled={
-            windowOpened
-              ? currentSongIndex === 0 && currentVerseIndex === 0
-              : !selectedSongId || verse === 0
-          }
-          title="Poprzednia pieśń"
-        >
-          <FaAngleDoubleLeft size={40} />
-        </button>
-        <button
-          className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={
-            windowOpened ? handlePrevVerse : () => sendContent(verse - 1)
-          }
-          disabled={
-            windowOpened
-              ? currentSongIndex === 0 && currentVerseIndex === 0
-              : !selectedSongId || verse === 0
-          }
-          title="Poprzednia zwrotka"
-        >
-          <FaAngleLeft size={40} />
-        </button>
-        <button
-          className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          onClick={
-            windowOpened ? handleNextVerse : () => sendContent(verse + 1)
-          }
-          disabled={
-            windowOpened
-              ? currentSongIndex === scheduleSongs.length - 1 &&
-                currentVerseIndex === (currentSong?.verses?.length || 1) - 1
-              : !selectedSongId || verse === song?.verses?.length - 1
-          }
-          title="Następna zwrotka"
-        >
-          <FaAngleRight size={40} />
-        </button>
-        <button
-          onClick={windowOpened ? handleNextSong : undefined}
-          className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
-          disabled={
-            windowOpened
-              ? currentSongIndex === scheduleSongs.length - 1
-              : !selectedSongId || verse === song?.verses?.length - 1
-          }
-          title="Następna pieśń"
-        >
-          <FaAngleDoubleRight size={40} />
-        </button>
+          <button
+            className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
+            onClick={
+              windowOpened ? handlePrevVerse : () => sendContent(verse - 1)
+            }
+            disabled={
+              windowOpened
+                ? currentSongIndex === 0 && currentVerseIndex === 0
+                : !selectedSongId || verse === 0
+            }
+            title="Poprzednia zwrotka"
+          >
+            <FaAngleLeft size={40} />
+          </button>
+          <button
+            className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
+            onClick={
+              windowOpened ? handleNextVerse : () => sendContent(verse + 1)
+            }
+            disabled={
+              windowOpened
+                ? currentSongIndex === scheduleSongs.length - 1 &&
+                  currentVerseIndex === (currentSong?.verses?.length || 1) - 1
+                : !selectedSongId || verse === song?.verses?.length - 1
+            }
+            title="Nastepna zwrotka"
+          >
+            <FaAngleRight size={40} />
+          </button>
+          <button
+            onClick={windowOpened ? handleNextSong : undefined}
+            className="rounded py-2 px-3 flex flex-col items-center gap-0.5 font-bold bg-gray-300 hover:bg-gray-200 transition-colors cursor-pointer aspect-square justify-center"
+            disabled={
+              windowOpened
+                ? currentSongIndex === scheduleSongs.length - 1
+                : !selectedSongId || verse === song?.verses?.length - 1
+            }
+            title="Nastepna piesn"
+          >
+            <FaAngleDoubleRight size={40} />
+          </button>
+        </div>
       </div>
-      <div className="border-t border-gray-400 bg-gray-200 text-xs px-2 py-0.5">
-        Prezentowanie xxx na wyświetlaczu{" "}
+      <div className="border-t border-gray-400 bg-gray-200 text-xs px-2 py-1 flex items-center justify-between gap-2">
+        <span>
+          {selectedDisplay
+            ? `Prezentacja na ekranie ${selectedDisplay.id} (${selectedDisplay.size.width}x${selectedDisplay.size.height})`
+            : "Brak wybranego ekranu"}
+        </span>
+        {selectedDisplay ? (
+          <span className="text-[10px] text-gray-600">
+            Pozycja: {selectedDisplay.bounds.x}, {selectedDisplay.bounds.y}
+          </span>
+        ) : null}
       </div>
-
-      {/* 
-      
-      
-      <div style={{ padding: "1rem" }}>
-        <h2>Wybierz wyświetlacz:</h2>
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {displays.map((d) => (
-            <li key={d.id} style={{ margin: "8px 0" }}>
-              <label>
-                <input
-                  type="radio"
-                  name="display"
-                  value={d.id}
-                  checked={selectedId === d.id}
-                  onChange={() => setSelectedId(d.id)}
-                />{" "}
-                Monitor {d.id} {d.id === currentDisplayId && "⭐"} –{" "}
-                {d.size.width}×{d.size.height} @ ({d.bounds.x}, {d.bounds.y})
-              </label>
-            </li>
-          ))}
-        </ul>
-        
-      </div> */}
     </div>
   );
 }

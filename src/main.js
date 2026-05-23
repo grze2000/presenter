@@ -1,5 +1,12 @@
 const Database = require("better-sqlite3");
-const { app, BrowserWindow, ipcMain, screen } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  screen,
+} = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { initDatabase } = require("./utils/initDatabase.js");
@@ -31,7 +38,153 @@ initDatabase(db);
 let fsWin = null;
 let mainWin = null;
 let displaySelectorWin = null;
+let slideControlWin = null;
 let preferredDisplayId = null;
+const SLIDE_CONTROL_MENU_ID = "toggle-slide-control-window";
+const PRESENTATION_GLOBAL_SHORTCUTS = [
+  { accelerator: "Space", code: "Space" },
+  { accelerator: "Right", code: "ArrowRight" },
+  { accelerator: "Left", code: "ArrowLeft" },
+  { accelerator: "Up", code: "ArrowUp" },
+  { accelerator: "Down", code: "ArrowDown" },
+  { accelerator: "Esc", code: "Escape" },
+];
+
+const isSlideControlWindowOpen = () =>
+  slideControlWin && !slideControlWin.isDestroyed();
+
+const syncSlideControlMenuState = (isOpen) => {
+  const menu = Menu.getApplicationMenu();
+  const item = menu?.getMenuItemById(SLIDE_CONTROL_MENU_ID);
+  if (item) {
+    item.checked = isOpen;
+  }
+};
+
+const sendPresentationKey = (code) => {
+  if (mainWin && !mainWin.isDestroyed()) {
+    mainWin.webContents.send("fullscreen-keydown", code);
+  }
+};
+
+const unregisterPresentationGlobalShortcuts = () => {
+  PRESENTATION_GLOBAL_SHORTCUTS.forEach(({ accelerator }) => {
+    if (globalShortcut.isRegistered(accelerator)) {
+      globalShortcut.unregister(accelerator);
+    }
+  });
+};
+
+const registerPresentationGlobalShortcuts = () => {
+  unregisterPresentationGlobalShortcuts();
+
+  PRESENTATION_GLOBAL_SHORTCUTS.forEach(({ accelerator, code }) => {
+    const registered = globalShortcut.register(accelerator, () => {
+      sendPresentationKey(code);
+    });
+
+    if (!registered) {
+      console.warn(
+        `[globalShortcut] Nie udalo sie zarejestrowac skrotu ${accelerator}`
+      );
+    }
+  });
+};
+
+const openSlideControlWindow = () => {
+  if (isSlideControlWindowOpen()) {
+    slideControlWin.focus();
+    return;
+  }
+
+  slideControlWin = new BrowserWindow({
+    width: 370,
+    height: 190,
+    resizable: false,
+    fullscreenable: false,
+    alwaysOnTop: true,
+    autoHideMenuBar: true,
+    title: "Sterowanie slajdami",
+    parent: mainWin ?? undefined,
+    webPreferences: {
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
+    },
+  });
+
+  slideControlWin.on("closed", () => {
+    slideControlWin = null;
+    syncSlideControlMenuState(false);
+  });
+
+  slideControlWin.webContents.once("did-finish-load", () => {
+    slideControlWin?.webContents.send(
+      "slide-control-presenting",
+      Boolean(fsWin && !fsWin.isDestroyed())
+    );
+  });
+
+  slideControlWin.loadFile(
+    path.join(__dirname, "..", "assets", "slide-control.html")
+  );
+  syncSlideControlMenuState(true);
+};
+
+const closeSlideControlWindow = () => {
+  if (isSlideControlWindowOpen()) {
+    slideControlWin.close();
+    return;
+  }
+  syncSlideControlMenuState(false);
+};
+
+const setSlideControlWindowVisible = (isVisible) => {
+  if (isVisible) {
+    openSlideControlWindow();
+    return;
+  }
+  closeSlideControlWindow();
+};
+
+const setupAppMenu = () => {
+  const menuTemplate = [
+    ...(process.platform === "darwin" ? [{ role: "appMenu" }] : []),
+    { role: "fileMenu" },
+    { role: "editMenu" },
+    {
+      label: "Widok",
+      submenu: [
+        {
+          id: SLIDE_CONTROL_MENU_ID,
+          label: "Panel sterowania slajdami",
+          type: "checkbox",
+          checked: false,
+          click: (item) => {
+            setSlideControlWindowVisible(item.checked);
+          },
+        },
+        { type: "separator" },
+        { role: "reload", label: "Przeladuj" },
+        ...(isDev
+          ? [
+              { role: "forceReload", label: "Wymus przeladowanie" },
+              { role: "toggleDevTools", label: "Narzedzia deweloperskie" },
+            ]
+          : []),
+        { type: "separator" },
+        { role: "resetZoom", label: "Resetuj powiekszenie" },
+        { role: "zoomIn", label: "Powieksz" },
+        { role: "zoomOut", label: "Pomniejsz" },
+        { type: "separator" },
+        { role: "togglefullscreen", label: "Pelny ekran" },
+      ],
+    },
+    { role: "windowMenu" },
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+};
 
 const openDisplaySelectorWindow = () => {
   if (displaySelectorWin && !displaySelectorWin.isDestroyed()) {
@@ -85,9 +238,13 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   createWindow();
+  setupAppMenu();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+});
+app.on("will-quit", () => {
+  unregisterPresentationGlobalShortcuts();
 });
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
@@ -192,9 +349,17 @@ ipcMain.handle("open-fullscreen", (e, displayId) => {
     },
   });
   fsWin.loadFile(path.join(__dirname, "../assets/fullscreen.html"));
+  registerPresentationGlobalShortcuts();
+  if (isSlideControlWindowOpen()) {
+    slideControlWin.webContents.send("slide-control-presenting", true);
+  }
   fsWin.on("closed", () => {
+    unregisterPresentationGlobalShortcuts();
     fsWin = null;
     mainWin?.webContents.send("fullscreen-closed");
+    if (isSlideControlWindowOpen()) {
+      slideControlWin.webContents.send("slide-control-presenting", false);
+    }
   });
 });
 ipcMain.handle("set-fullscreen-content", (e, text) => {
@@ -205,8 +370,19 @@ ipcMain.handle("close-fullscreen", () => {
 });
 
 ipcMain.on("fullscreen-keydown", (e, code) => {
-  if (mainWin) {
-    mainWin.webContents.send("fullscreen-keydown", code);
+  sendPresentationKey(code);
+});
+ipcMain.on("slide-control-action", (_event, action) => {
+  if (mainWin && !mainWin.isDestroyed()) {
+    mainWin.webContents.send("slide-control-action", action);
+  }
+});
+ipcMain.on("slide-control-presenting", (_event, isPresenting) => {
+  if (isSlideControlWindowOpen()) {
+    slideControlWin.webContents.send(
+      "slide-control-presenting",
+      Boolean(isPresenting)
+    );
   }
 });
 

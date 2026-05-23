@@ -137,6 +137,10 @@ export default function DisplaySelector() {
   };
 
   useEffect(() => {
+    window.api.setSlideControlPresenting?.(windowOpened);
+  }, [windowOpened]);
+
+  useEffect(() => {
     const handleAction = async (code) => {
       if (!windowOpened || !scheduleSongs.length) return;
 
@@ -199,13 +203,39 @@ export default function DisplaySelector() {
     const removeFs = window.api.onFullscreenKeyDown?.((code) => {
       handleAction(code);
     });
+    const removeSlideControl = window.api.onSlideControlAction?.((action) => {
+      if (action === "prev-song") {
+        handleAction("ArrowDown");
+      } else if (action === "prev-verse") {
+        handleAction("ArrowLeft");
+      } else if (action === "next-verse") {
+        handleAction("ArrowRight");
+      } else if (action === "next-song") {
+        handleAction("ArrowUp");
+      } else if (action === "toggle-present") {
+        if (windowOpened) {
+          setWindowOpened(false);
+          window.api.closeFullscreen();
+        } else {
+          handlePresent();
+        }
+      }
+    });
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       removeFs?.();
+      removeSlideControl?.();
     };
-  }, [windowOpened, currentSongIndex, currentVerseIndex, scheduleSongs]);
+  }, [
+    windowOpened,
+    currentSongIndex,
+    currentVerseIndex,
+    scheduleSongs,
+    selectedId,
+    selectedSchedule,
+  ]);
 
   const handleNextSong = async () => {
     setPreviewSong(null);

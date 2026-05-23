@@ -32,9 +32,24 @@ contextBridge.exposeInMainWorld("api", {
   saveSong: (song) => ipcRenderer.invoke("save-song", song),
   selectDisplay: (id) => ipcRenderer.invoke("select-display", id),
   openDisplaySelector: () => ipcRenderer.invoke("open-display-selector"),
+  sendSlideControlAction: (action) =>
+    ipcRenderer.send("slide-control-action", action),
+  setSlideControlPresenting: (isPresenting) =>
+    ipcRenderer.send("slide-control-presenting", Boolean(isPresenting)),
   onDisplaySelected: (cb) => {
     const listener = (_event, id) => cb(id);
     ipcRenderer.on("display-selected", listener);
     return () => ipcRenderer.removeListener("display-selected", listener);
+  },
+  onSlideControlAction: (cb) => {
+    const listener = (_event, action) => cb(action);
+    ipcRenderer.on("slide-control-action", listener);
+    return () => ipcRenderer.removeListener("slide-control-action", listener);
+  },
+  onSlideControlPresenting: (cb) => {
+    const listener = (_event, isPresenting) => cb(Boolean(isPresenting));
+    ipcRenderer.on("slide-control-presenting", listener);
+    return () =>
+      ipcRenderer.removeListener("slide-control-presenting", listener);
   },
 });
